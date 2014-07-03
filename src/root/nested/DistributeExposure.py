@@ -2,6 +2,9 @@
 Created on Mar 11, 2014
 
 @author: kahere
+
+Night lights dataset is available for download via NOAA
+http://www.ngdc.noaa.gov/eog/dmsp/download_radcal.html
 '''
 
 import tkinter
