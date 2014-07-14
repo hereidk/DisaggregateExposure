@@ -10,6 +10,7 @@ http://www.ngdc.noaa.gov/eog/dmsp/download_radcal.html
 import tkinter
 import tkinter.filedialog as tkFileDialog
 import os
+import sys
 from root.nested.ClipLights import Clip, Portfolio
 import numpy as np
 from root.nested.EDMGenerator import EDM
@@ -34,7 +35,7 @@ def LOBList():
     return choices
 
 def perilList():
-    choices = ['WS', 'EQ']
+    choices = ['WS', 'EQ', 'FL']
     return choices
 
 def scrollMenu(function):
@@ -116,7 +117,7 @@ def generateLights(country,image_file,resolution):
     lights = Clip(country,image_file,resolution)      
     lights.clipToMask()
     
-def generatePoints(country,image_file,resolution):
+def generatePoints(country,image_file,resolution,LOB,peril):
     # Distribute portfolio of exposures
     if resolution == 'State/Province':
         portfolio_file = selectPortfolio(country)
@@ -124,8 +125,29 @@ def generatePoints(country,image_file,resolution):
         numlocs = numLocsButton()
         avg_TIV = avgTIVButton()     
         portfolio_file = [country, numlocs, avg_TIV*numlocs]  
-    portfolio = Portfolio(country,image_file,portfolio_file,resolution)  
+    portfolio = Portfolio(country,image_file,portfolio_file,resolution,LOB,peril)  
     portfolio.distribute_locs()
+    
+    if resolution == 'State/Province':
+        mergeCSV(r'C:\PF2\QGIS Valmiera\Datasets\%s\Provinces\Points' % country, r'C:\PF2\QGIS Valmiera\Datasets\%s\Provinces\%sProvincePtsCompiled.csv' % (country, country), country)
+
+def mergeCSV(srcDir,destCSV,country):
+    with open(destCSV,'w') as destFile:
+        header=''
+        for root,dirs,files in os.walk(srcDir):
+            for f in files:
+                if f.endswith(".csv"):
+                    if country in f:
+                        continue
+                    else:
+                        with open(os.path.join(root,f),'r') as csvfile:
+                            if header=='':
+                                header=csvfile.readline()
+                                destFile.write(header)
+                            else:
+                                csvfile.readline()
+                            for line in csvfile:
+                                destFile.write(line)   
 
 def numLocsButton():
     root = tkinter.Tk()
@@ -194,7 +216,7 @@ if __name__ == '__main__':
     
     generateLights(country,image_file,resolution)
     
-    generatePoints(country,image_file,resolution)    
+    generatePoints(country,image_file,resolution,LOB,peril)    
 
     
 #     Generate EDM file
