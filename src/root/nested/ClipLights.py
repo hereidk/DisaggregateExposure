@@ -188,7 +188,7 @@ class Portfolio(object):
     Take aggregate portfolio data, split by province, distribute
     by weighted probability using nighttime lights data
     '''
-    def __init__(self,country,image_file,portfolio_file,resolution):
+    def __init__(self,country,image_file,portfolio_file,resolution,LOB,peril):
         if resolution == 'State/Province':
             portfile = pandas.read_csv(portfolio_file,sep=",",usecols = (0,1,2),encoding='latin-1')
         elif resolution == 'Country':
@@ -196,6 +196,8 @@ class Portfolio(object):
         self.portfile = np.array(portfile)
         self.country = country
         self.resolution = resolution
+        self.LOB = LOB
+        self.peril = peril
 
         # Polygon shapefile used to clip
         if resolution == 'State/Province':
@@ -218,8 +220,11 @@ class Portfolio(object):
         
         province_names = self.portfile[:,0]
         cnt = self.portfile[:,1]
-        loc_count = dict(zip(province_names,cnt.astype(int)))
-        loc_TIV = dict(zip(province_names,self.portfile[:,2]))
+        try:
+            loc_count = dict(zip(province_names,cnt.astype(int)))
+            loc_TIV = dict(zip(province_names,self.portfile[:,2]))
+        except ValueError:
+            print (province_names, cnt)
         for province in province_names:
             lyr.SetAttributeFilter("name = '%s'" % province)
             poly = lyr.GetNextFeature()
@@ -243,7 +248,7 @@ class Portfolio(object):
             
             # Calculate average value per location
             if self.resolution == 'State/Province':
-                avg_TIV = np.float(loc_TIV[province])/loc_count[province]
+                avg_TIV = np.float(loc_TIV[province].replace(',',''))/loc_count[province] # Strip commas from string values if necessary
             elif self.resolution == 'Country':
                 avg_TIV = np.float(self.portfile[0,2])/np.float(self.portfile[0,1])
             
@@ -267,7 +272,7 @@ class Portfolio(object):
     
             # Scale randomly-produced insured values to match known total for region    
             sum_TIV = np.sum(locdist[:,2])
-            scale_TIV = np.float(loc_TIV[province])/sum_TIV
+            scale_TIV = np.float(loc_TIV[province].replace(',',''))/sum_TIV
             locdist[:,2] = locdist[:,2] * scale_TIV
                            
             # Output latitude, longitude, total insured value to .csv file
@@ -275,7 +280,11 @@ class Portfolio(object):
             if not os.path.exists(output):
                 os.makedirs(output)
             locdist_pandas = pandas.DataFrame(locdist, columns = ['Lat','Lon','TIV'])
-            locdist_pandas.to_csv('%s\%s.csv' % (output,province), columns=['Lat','Lon','TIV'], index=False)
+            locdist_pandas['State/Province'] = province
+            locdist_pandas['Country'] = self.country
+            locdist_pandas['LOB'] = self.LOB
+            locdist_pandas['Peril'] = self.peril
+            locdist_pandas.to_csv('%s\%s.csv' % (output,province), columns=['Lat','Lon','TIV','State/Province','Country','LOB','Peril'], index=False)
             
     def setpt(self,zd,cumdist,x0,y0,x1,y1):
         '''
