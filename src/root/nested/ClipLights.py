@@ -209,6 +209,12 @@ class Portfolio(object):
         Nightlights = Clip(country,image_file,resolution)
         [self.xres,self.yres] = Nightlights.getResolution()
                
+    def isNumber(self,s):
+        try:
+            int(s)
+            return True
+        except ValueError:
+            return False
        
     def distribute_locs(self): 
         
@@ -220,9 +226,19 @@ class Portfolio(object):
         
         province_names = self.portfile[:,0]
         cnt = self.portfile[:,1]
+        tiv = self.portfile[:,2]
+        for i in range(np.size(cnt,0)): # Clean number strings, remove commas, set dtype
+            if self.isNumber(cnt[i]):
+                cnt[i] = int(cnt[i])
+            else:
+                cnt[i] = int(cnt[i].replace(',',''))
+            if self.isNumber(tiv[i]):
+                tiv[i] = int(tiv[i])
+            else:
+                tiv[i] = int(tiv[i].replace(',',''))
         try:
-            loc_count = dict(zip(province_names,cnt.astype(int)))
-            loc_TIV = dict(zip(province_names,self.portfile[:,2]))
+            loc_count = dict(zip(province_names,cnt))
+            loc_TIV = dict(zip(province_names,tiv))
         except ValueError:
             print (province_names, cnt)
         for province in province_names:
@@ -248,7 +264,10 @@ class Portfolio(object):
             
             # Calculate average value per location
             if self.resolution == 'State/Province':
-                avg_TIV = np.float(loc_TIV[province].replace(',',''))/loc_count[province] # Strip commas from string values if necessary
+                try:
+                    avg_TIV = np.float(loc_TIV[province])/loc_count[province]
+                except ZeroDivisionError:
+                    avg_TIV = 0
             elif self.resolution == 'Country':
                 avg_TIV = np.float(self.portfile[0,2])/np.float(self.portfile[0,1])
             
@@ -272,7 +291,7 @@ class Portfolio(object):
     
             # Scale randomly-produced insured values to match known total for region    
             sum_TIV = np.sum(locdist[:,2])
-            scale_TIV = np.float(loc_TIV[province].replace(',',''))/sum_TIV
+            scale_TIV = np.float(loc_TIV[province])/sum_TIV
             locdist[:,2] = locdist[:,2] * scale_TIV
                            
             # Output latitude, longitude, total insured value to .csv file
