@@ -31,7 +31,7 @@ def resolutionList():
     return choices
 
 def LOBList():
-    choices = ['Res', 'Com']
+    choices = ['Res', 'Com', 'Ind']
     return choices
 
 def perilList():
