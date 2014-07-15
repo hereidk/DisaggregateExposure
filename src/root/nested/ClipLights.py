@@ -39,22 +39,31 @@ class Clip(object):
         elif resolution == 'Country':
             self.shp = r'%s\Boundaries\ne_10m_admin_0_countries\Separated by countries\ne_10m_admin_0_countries_ADMIN__%s' % (geodatafilepath, country)
         
+        
         # Name of clip raster file(s)
         self.output = r'%s\%s\Provinces\Clip\\' % (geodatafilepath, country)
         
         # Load the source data as a gdalnumeric array
         self.srcArray = gdalnumeric.LoadFile(self.raster)
         
-        # Also load as a gdal image to get geotransform 
+        # Also load as a gdal image to get geotransform
         # (world file) info
         self.srcImage = gdal.Open(self.raster)
         
         if resolution == 'State/Province':
+            # Apply initial clip to work with country-level raster, instead of global (improves speed)
             self.raster = self.initialClip()
             self.srcArray = gdalnumeric.LoadFile(self.raster)
             self.srcImage = gdal.Open(self.raster)
-        
-        
+            
+        # Output resolution to .csv
+        geoMatrix = self.srcImage.GetGeoTransform()
+        xres = geoMatrix[1]  
+        yres = geoMatrix[5]
+        res_array = np.array([xres,yres])
+        res_array = np.reshape(res_array,(1,2))
+        res = pandas.DataFrame(res_array, columns=('XRes','YRes'))
+        res.to_csv('%s\%s\%sResolution.csv' % (geodatafilepath, country, country),columns=('XRes','YRes'),index=False)
         
     def initialClip(self):
         # Create an OGR layer from a boundary shapefile
@@ -134,11 +143,13 @@ class Clip(object):
         
         return '%s%s.tif' % (self.output, province_name)
         
-    def getResolution(self):
-        geoMatrix = self.srcImage.GetGeoTransform()
-        xres = geoMatrix[1]  
-        yres = geoMatrix[5]
-        return [xres,yres]
+#     def getResolution(self):
+#         geoMatrix = self.srcImage.GetGeoTransform()
+#         xres = geoMatrix[1]  
+#         yres = geoMatrix[5]
+#         res = pandas.DataFrame([xres,yres], columns=('XRes','YRes'))
+#         res.to_csv('%s\%sResolution.csv' % (geodatafilepath, ),columns=('XRes','YRes'),index=False)
+#         return [xres,yres]
         
     def clipToMask(self):
         '''
@@ -295,9 +306,10 @@ class Portfolio(object):
         elif resolution == 'Country':
             self.shp = r'%s\Boundaries\ne_10m_admin_0_countries\Separated by countries\ne_10m_admin_0_countries_ADMIN__%s' % (geodatafilepath, country)
         
-        
-        Nightlights = Clip(country,image_file,resolution)
-        [self.xres,self.yres] = Nightlights.getResolution()
+        # Load dataset resolution
+        resolution = np.loadtxt('%s\%s\%sResolution.csv' % (geodatafilepath, country, country),skiprows=1,delimiter=',')
+        self.xres = resolution[0]
+        self.yres = resolution[1]
                
     def isNumber(self,s):
         # Test if value is number

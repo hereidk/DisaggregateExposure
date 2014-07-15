@@ -16,6 +16,7 @@ import numpy as np
 from root.nested.EDMGenerator import EDM
 import ogr
 import pandas
+import cProfile
 
 geodatafilepath = 'C:\PF2\QGIS Valmiera\Datasets'
 
@@ -207,9 +208,20 @@ def generateEDM(country, province, LOB, peril):
     edm = EDM(country, province, LOB, peril)
     edm.genLocFile()
     edm.outputFiles()
-
-if __name__ == '__main__':
     
+def EDMOn(run=True, resolution, country, LOB, peril):
+    #     Generate EDM file
+    if run:
+        if resolution == 'Country':
+            generateEDM(country, country, LOB, peril)
+        if resolution == 'State/Province':
+            province_files = os.listdir(path='%s\%s\Provinces\Points' % (geodatafilepath,country))
+            for province in province_files:
+                if province[:-4] != country: # Trim off '.csv', exclude full country file
+                    generateEDM(country, province[:-4], LOB, peril)
+    
+    
+def runMain():
     # User input
     resolution = scrollMenu(resolutionList())
     country = scrollMenu(countryList())
@@ -227,15 +239,11 @@ if __name__ == '__main__':
     
     generatePoints(country,image_file,resolution,LOB,peril)    
 
+    # Turn EDM import generator on or off with run
+    EDMOn(run=False, resolution, country, LOB, peril)
+
+
+if __name__ == '__main__':
+    cProfile.run('runMain()', sort='cumtime')
+#     runMain()
     
-#     Generate EDM file
-    if resolution == 'Country':
-        generateEDM(country, country, LOB, peril)
-    if resolution == 'State/Province':
-        province_files = os.listdir(path='%s\%s\Provinces\Points' % (geodatafilepath,country))
-        for province in province_files:
-            if province[:-4] != country: # Trim off '.csv', exclude full country file
-                generateEDM(country, province[:-4], LOB, peril)
-    
-    
-        
