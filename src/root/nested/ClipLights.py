@@ -14,6 +14,7 @@ import pandas
 import bisect
 import os
 import random
+import tkinter
 
 geodatafilepath = 'C:\PF2\QGIS Valmiera\Datasets'
 
@@ -216,6 +217,43 @@ class Portfolio(object):
         except ValueError:
             return False
        
+    
+    def scrollMenu(self, file_province_name, shp_province_names):
+        # Drop-down menu to select country
+        root = tkinter.Tk()
+        root.geometry("%dx%d+%d+%d" % (330, 80, 200, 150))
+        root.title('Select correct province for %s' % file_province_name)
+        
+        choices = shp_province_names
+            
+        var = tkinter.StringVar(root)
+        var.set(choices[0]) # Initial value
+        option = tkinter.OptionMenu(root, var, *choices)
+        option.pack(side='left', padx=10, pady=10)
+        scrollbar = tkinter.Scrollbar(root)
+        scrollbar.pack(side='right', fill='y')
+        
+        def get_country():
+            select_country = var.get()
+            root.quit()
+            return select_country
+        
+        button = tkinter.Button(root, text='OK', command=get_country)
+        button.pack(side='left', padx=20, pady=10)
+            
+        root.mainloop()
+        country = button.invoke()
+        root.withdraw()
+        return country
+    
+    def provinceQC(self,file_province_names,shp_province_names):
+        QC_province = [i for i in file_province_names if i in shp_province_names]
+        mismatch_file = [i for i in file_province_names if not i in shp_province_names] 
+        mismatch_shp = [i for i in shp_province_names if not i in file_province_names] 
+        for i in mismatch_file:
+            QC_province.append(self.scrollMenu(i,mismatch_shp))
+        return QC_province
+    
     def distribute_locs(self): 
         
         # Create an OGR layer from a boundary shapefile
@@ -225,8 +263,17 @@ class Portfolio(object):
         lyr = shapef.GetLayer()
         
         province_names = self.portfile[:,0]
+        
+        shp_province_names = []
+        for i in range(lyr.GetFeatureCount()):
+            province_feature = lyr.GetFeature(i)
+            shp_province_names.append(province_feature.GetField(province_feature.GetFieldIndex('name')))
+        
+        province_names = self.provinceQC(province_names, shp_province_names)
+        
         cnt = self.portfile[:,1]
         tiv = self.portfile[:,2]
+        
         for i in range(np.size(cnt,0)): # Clean number strings, remove commas, set dtype
             if self.isNumber(cnt[i]):
                 cnt[i] = int(cnt[i])
@@ -236,11 +283,13 @@ class Portfolio(object):
                 tiv[i] = int(tiv[i])
             else:
                 tiv[i] = int(tiv[i].replace(',',''))
+                
         try:
             loc_count = dict(zip(province_names,cnt))
             loc_TIV = dict(zip(province_names,tiv))
         except ValueError:
             print (province_names, cnt)
+            
         for province in province_names:
             lyr.SetAttributeFilter("name = '%s'" % province)
             poly = lyr.GetNextFeature()
