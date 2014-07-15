@@ -190,10 +190,12 @@ class Portfolio(object):
     by weighted probability using nighttime lights data
     '''
     def __init__(self,country,image_file,portfolio_file,resolution,LOB,peril):
-        if resolution == 'State/Province':
+        if resolution == 'State/Province': # Get data from portfolio file if at state/province level
             portfile = pandas.read_csv(portfolio_file,sep=",",usecols = (0,1,2),encoding='latin-1')
-        elif resolution == 'Country':
+        elif resolution == 'Country': # Format country-level data correctly
             portfile = np.reshape(portfolio_file,(1,3))
+        
+        # Set portfolio parameters
         self.portfile = np.array(portfile)
         self.country = country
         self.resolution = resolution
@@ -211,15 +213,15 @@ class Portfolio(object):
         [self.xres,self.yres] = Nightlights.getResolution()
                
     def isNumber(self,s):
+        # Test if value is number
         try:
             int(s)
             return True
         except ValueError:
             return False
        
-    
     def scrollMenu(self, file_province_name, shp_province_names):
-        # Drop-down menu to select country
+        # Drop-down menu to select correct province
         root = tkinter.Tk()
         root.geometry("%dx%d+%d+%d" % (330, 80, 200, 150))
         root.title('Select correct province for %s' % file_province_name)
@@ -233,20 +235,21 @@ class Portfolio(object):
         scrollbar = tkinter.Scrollbar(root)
         scrollbar.pack(side='right', fill='y')
         
-        def get_country():
-            select_country = var.get()
+        def get_province():
+            select_province = var.get()
             root.quit()
-            return select_country
+            return select_province
         
-        button = tkinter.Button(root, text='OK', command=get_country)
+        button = tkinter.Button(root, text='OK', command=get_province)
         button.pack(side='left', padx=20, pady=10)
             
         root.mainloop()
-        country = button.invoke()
+        match_province = button.invoke()
         root.withdraw()
-        return country
+        return match_province
     
     def provinceQC(self,file_province_names,shp_province_names):
+        # Gets user input on any province names that do not match between shp and portfolio files
         QC_province = [i for i in file_province_names if i in shp_province_names]
         mismatch_file = [i for i in file_province_names if not i in shp_province_names] 
         mismatch_shp = [i for i in shp_province_names if not i in file_province_names] 
@@ -262,18 +265,20 @@ class Portfolio(object):
         shapef = driver.Open('%s.shp' % self.shp)
         lyr = shapef.GetLayer()
         
+        # Province names from portfolio data
         province_names = self.portfile[:,0]
         
+        # Province names from boundary shapefile
         shp_province_names = []
         for i in range(lyr.GetFeatureCount()):
             province_feature = lyr.GetFeature(i)
             shp_province_names.append(province_feature.GetField(province_feature.GetFieldIndex('name')))
         
+        # Correct any mismatches between province lists
         province_names = self.provinceQC(province_names, shp_province_names)
         
         cnt = self.portfile[:,1]
-        tiv = self.portfile[:,2]
-        
+        tiv = self.portfile[:,2]        
         for i in range(np.size(cnt,0)): # Clean number strings, remove commas, set dtype
             if self.isNumber(cnt[i]):
                 cnt[i] = int(cnt[i])
