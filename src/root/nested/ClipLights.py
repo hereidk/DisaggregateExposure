@@ -278,7 +278,10 @@ class Portfolio(object):
         province_names = self.provinceQC(province_names, shp_province_names)
         
         cnt = self.portfile[:,1]
-        tiv = self.portfile[:,2]        
+        tiv = self.portfile[:,2]  
+        if self.resolution == 'Country':
+            cnt = cnt.astype(int)
+            tiv = tiv.astype(float)      
         for i in range(np.size(cnt,0)): # Clean number strings, remove commas, set dtype
             if self.isNumber(cnt[i]):
                 cnt[i] = int(cnt[i])
