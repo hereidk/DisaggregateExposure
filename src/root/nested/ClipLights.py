@@ -215,7 +215,7 @@ class Portfolio(object):
     def isNumber(self,s):
         # Test if value is number
         try:
-            int(s)
+            float(s)
             return True
         except ValueError:
             return False
@@ -285,9 +285,9 @@ class Portfolio(object):
             else:
                 cnt[i] = int(cnt[i].replace(',',''))
             if self.isNumber(tiv[i]):
-                tiv[i] = int(tiv[i])
+                tiv[i] = float(tiv[i])
             else:
-                tiv[i] = int(tiv[i].replace(',',''))
+                tiv[i] = float(tiv[i].replace(',',''))
                 
         try:
             loc_count = dict(zip(province_names,cnt))
