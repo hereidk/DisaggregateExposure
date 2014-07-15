@@ -117,10 +117,11 @@ def equalExposureTestPortfolio(country):
     portfolio_file_pandas.to_csv(file_path, columns=['locCount','locTIV'], index=True, index_label='name')
     return file_path
 
-def generateLights(country,image_file,resolution):
-    #     Generate clipped images of satellite data
-    lights = Clip(country,image_file,resolution)      
-    lights.clipToMask()
+def generateLights(country,image_file,resolution,run=True):
+    if run:
+        #     Generate clipped images of satellite data
+        lights = Clip(country,image_file,resolution)      
+        lights.clipToMask()
     
 def generatePoints(country,image_file,resolution,LOB,peril):
     # Distribute portfolio of exposures
@@ -209,7 +210,7 @@ def generateEDM(country, province, LOB, peril):
     edm.genLocFile()
     edm.outputFiles()
     
-def EDMOn(run=True, resolution, country, LOB, peril):
+def EDMOn(resolution, country, LOB, peril, run=True):
     #     Generate EDM file
     if run:
         if resolution == 'Country':
@@ -235,12 +236,12 @@ def runMain():
     image_file = r'%s\Night Lights\No-Saturation-F16_20100111-20110731_rad_v4.geotiff\No-Saturation-F16_20100111-20110731_rad_v4.geotiff\F16_20100111-20110731_rad_v4.avg_vis.tif' % geodatafilepath
 #     image_file = r'C:\PF2\QGIS Valmiera\Datasets\%s\%s no saturation night lights' % (country, country)
     
-    generateLights(country,image_file,resolution)
+    generateLights(country,image_file,resolution,run=False)
     
     generatePoints(country,image_file,resolution,LOB,peril)    
 
     # Turn EDM import generator on or off with run
-    EDMOn(run=False, resolution, country, LOB, peril)
+    EDMOn(resolution, country, LOB, peril, run=False)
 
 
 if __name__ == '__main__':

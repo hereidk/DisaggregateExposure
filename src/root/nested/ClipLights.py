@@ -410,13 +410,13 @@ class Portfolio(object):
             
             # Load clipped light image file
             try:
-                provArray = gdalnumeric.LoadFile(r'%s\%s\Provinces\Clip\%s.tif' % (geodatafilepath, self.country,province))
+                provArray = gdalnumeric.LoadFile(r'%s\%s\Provinces\Clip\%s.tif' % (geodatafilepath, self.country, province))
             except: # Check for image file not being produced
                 print("Invalid province name: ",province)
                 province = input("Please input correct province name, or None if not available. ")
                 if province == 'None' or province == 'none':
                     continue
-                provArray = gdalnumeric.LoadFile(r'%s\%s\Provinces\Clip\%s.tif' % (geodatafilepath, self.country,province))
+                provArray = gdalnumeric.LoadFile(r'%s\%s\Provinces\Clip\%s.tif' % (geodatafilepath, self.country, province))
             
             # Calculate average value per location
             if self.resolution == 'State/Province':
