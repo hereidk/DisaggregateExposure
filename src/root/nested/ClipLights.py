@@ -360,7 +360,10 @@ class Portfolio(object):
             locdist_pandas['Country'] = self.country
             locdist_pandas['LOB'] = self.LOB
             locdist_pandas['Peril'] = self.peril
-            locdist_pandas.to_csv('%s\%s.csv' % (output,province), columns=['Lat','Lon','TIV','State/Province','Country','LOB','Peril'], index=False)
+            if self.resolution == 'Country':
+                locdist_pandas.to_csv('%s\%s.csv' % (output,province), columns=['Lat','Lon','TIV','Country','LOB','Peril'], index=False)
+            else:
+                locdist_pandas.to_csv('%s\%s.csv' % (output,province), columns=['Lat','Lon','TIV','State/Province','Country','LOB','Peril'], index=False)
             
     def setpt(self,zd,cumdist,x0,y0,x1,y1):
         '''
