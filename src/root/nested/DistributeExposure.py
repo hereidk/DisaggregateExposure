@@ -107,8 +107,8 @@ def equalExposureTestPortfolio(country):
             province_names = np.append(province_names,lyr.GetFeature(province).GetField('name'))
     
     portfolio_file = np.zeros((np.size(province_names),2))
-    num_locs = numLocsButton()
-    avg_TIV = avgTIVButton()
+    num_locs = inputButton('Enter number of locations to distribute.')
+    avg_TIV = inputButton('Enter average TIV.')
     portfolio_file[:,0] = num_locs
     portfolio_file[:,1] = num_locs * avg_TIV
     portfolio_file_pandas = pandas.DataFrame(portfolio_file, index = province_names, columns = ['locCount','locTIV'])
@@ -128,8 +128,8 @@ def generatePoints(country,image_file,resolution,LOB,peril):
     if resolution == 'State/Province':
         portfolio_file = selectPortfolio(country)
     if resolution == 'Country':
-        numlocs = numLocsButton()
-        avg_TIV = avgTIVButton()     
+        numlocs = inputButton('Enter number of locations to distribute.')
+        avg_TIV = inputButton('Enter average TIV.')     
         portfolio_file = [country, numlocs, avg_TIV*numlocs]  
     portfolio = Portfolio(country,image_file,portfolio_file,resolution,LOB,peril)  
     portfolio.distribute_locs()
@@ -156,11 +156,11 @@ def mergeCSV(srcDir,destCSV,country):
                             for line in csvfile:
                                 destFile.write(line)   
 
-def numLocsButton():
+def inputButton(title):
     # Manually set number of locations to distribute
     root = tkinter.Tk()
     root.geometry("%dx%d+%d+%d" % (330, 80, 200, 150))
-    root.title('Enter number of locations to distribute.')
+    root.title(title)
       
     entry = tkinter.Entry(root)
     entry.pack()
@@ -180,30 +180,6 @@ def numLocsButton():
     root.withdraw()
     return numlocs
 
-def avgTIVButton():
-    # Manually set average TIV
-    root = tkinter.Tk()
-    root.geometry("%dx%d+%d+%d" % (330, 80, 200, 150))
-    root.title('Enter average TIV.')
-      
-    entry = tkinter.Entry(root)
-    entry.pack()
-      
-    def get_country():
-        var = tkinter.StringVar(root)
-        select_country = var.get()
-        root.quit()
-        return select_country
-  
-    button = tkinter.Button(root, text='OK', command=get_country)
-    button.pack(side='left', padx=20, pady=10)
-      
-    root.mainloop()
-      
-    avg_TIV = np.float(entry.get())
-    root.withdraw()
-    return avg_TIV
-
 def generateEDM(country, province, LOB, peril):
     # Produce set of EDM import files
     edm = EDM(country, province, LOB, peril)
@@ -220,8 +196,7 @@ def EDMOn(resolution, country, LOB, peril, run=True):
             for province in province_files:
                 if province[:-4] != country: # Trim off '.csv', exclude full country file
                     generateEDM(country, province[:-4], LOB, peril)
-    
-    
+        
 def runMain():
     # User input
     resolution = scrollMenu(resolutionList())
@@ -229,12 +204,8 @@ def runMain():
     LOB = scrollMenu(LOBList())
     peril = scrollMenu(perilList())  
         
-#     Input filename of nighttime lights dataset. If unsure, use first
-#     definition of image_file, which has global coverage, but slower to run.
-#     Use lights clipped to country extent to speed up code.
-
+#     Input filename of nighttime lights dataset. 
     image_file = r'%s\Night Lights\No-Saturation-F16_20100111-20110731_rad_v4.geotiff\No-Saturation-F16_20100111-20110731_rad_v4.geotiff\F16_20100111-20110731_rad_v4.avg_vis.tif' % geodatafilepath
-#     image_file = r'C:\PF2\QGIS Valmiera\Datasets\%s\%s no saturation night lights' % (country, country)
     
     generateLights(country,image_file,resolution,run=False)
     
