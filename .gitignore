@@ -214,3 +214,5 @@ pip-log.txt
 #Mr Developer
 .mr.developer.cfg
 src/root/nested/EDMGenerator.py
+src/root/nested/AccExpTemplate.csv
+src/root/nested/LocExpTemplate.csv
