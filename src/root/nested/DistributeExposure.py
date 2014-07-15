@@ -20,21 +20,24 @@ import pandas
 geodatafilepath = 'C:\PF2\QGIS Valmiera\Datasets'
 
 def countryList():
-    
+    # Countries available to distribute exposures
     choices = np.loadtxt('CountryListVShort.csv',dtype=str,delimiter=',')
     for i in range(np.size(choices)):
         choices[i] = choices[i][2:-1]
     return choices
 
 def resolutionList():
+    # Choose level to distribute exposures
     choices = ['Country', 'State/Province']
     return choices
 
 def LOBList():
+    # Choose LOB options
     choices = ['Res', 'Com', 'Ind']
     return choices
 
 def perilList():
+    # Choose peril options
     choices = ['WS', 'EQ', 'FL']
     return choices
 
@@ -89,6 +92,7 @@ def selectPortfolio(country):
     return portfolio_file         
 
 def equalExposureTestPortfolio(country):
+    # Generate .csv file with equal exposures in each state/province
     shp = r'%s\Boundaries\ne_10m_admin_1_states_provinces\Separated by countries\ne_10m_admin_1_states_provinces_admin__%s' % (geodatafilepath, country)
     
     DriverName = "ESRI Shapefile"
@@ -132,6 +136,7 @@ def generatePoints(country,image_file,resolution,LOB,peril):
         mergeCSV(r'C:\PF2\QGIS Valmiera\Datasets\%s\Provinces\Points' % country, r'C:\PF2\QGIS Valmiera\Datasets\%s\Provinces\%sProvincePtsCompiled.csv' % (country, country), country)
 
 def mergeCSV(srcDir,destCSV,country):
+    # Merge individual state/province .csv files into one country-level file
     with open(destCSV,'w') as destFile:
         header=''
         for root,dirs,files in os.walk(srcDir):
@@ -150,6 +155,7 @@ def mergeCSV(srcDir,destCSV,country):
                                 destFile.write(line)   
 
 def numLocsButton():
+    # Manually set number of locations to distribute
     root = tkinter.Tk()
     root.geometry("%dx%d+%d+%d" % (330, 80, 200, 150))
     root.title('Enter number of locations to distribute.')
@@ -173,6 +179,7 @@ def numLocsButton():
     return numlocs
 
 def avgTIVButton():
+    # Manually set average TIV
     root = tkinter.Tk()
     root.geometry("%dx%d+%d+%d" % (330, 80, 200, 150))
     root.title('Enter average TIV.')
@@ -196,12 +203,14 @@ def avgTIVButton():
     return avg_TIV
 
 def generateEDM(country, province, LOB, peril):
+    # Produce set of EDM import files
     edm = EDM(country, province, LOB, peril)
     edm.genLocFile()
     edm.outputFiles()
 
 if __name__ == '__main__':
     
+    # User input
     resolution = scrollMenu(resolutionList())
     country = scrollMenu(countryList())
     LOB = scrollMenu(LOBList())
