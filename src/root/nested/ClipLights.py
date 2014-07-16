@@ -63,6 +63,10 @@ class Clip(object):
         res_array = np.array([xres,yres])
         res_array = np.reshape(res_array,(1,2))
         res = pandas.DataFrame(res_array, columns=('XRes','YRes'))
+        
+        # Start country directory if it doesn't already exist
+        if not os.path.exists('%s\%s' % (geodatafilepath, country)):
+            os.mkdir('%s\%s' % (geodatafilepath, country))
         res.to_csv('%s\%s\%sResolution.csv' % (geodatafilepath, country, country),columns=('XRes','YRes'),index=False)
         
     def initialClip(self):
@@ -79,16 +83,22 @@ class Clip(object):
 
         ulX, ulY = self.world2Pixel(geoTrans, minX, maxY)
         lrX, lrY = self.world2Pixel(geoTrans, maxX, minY)
+        
+        # Include offset to position correctly within overall image
+        xoffset =  ulX
+        yoffset =  ulY
+        
+        # Correction for countries that exceed satellite dataset boundaries
+        if ulY < 0:
+            ulY = 0
+            yoffset = 0
+            maxY = 75.
     
         # Calculate the pixel size of the new image
         pxWidth = int(lrX - ulX)
         pxHeight = int(lrY - ulY)
         
-        clip = self.srcArray[ulY:lrY, ulX:lrX]
-                
-        # Include offset to position correctly within overall image
-        xoffset =  ulX
-        yoffset =  ulY
+        clip = self.srcArray[ulY:lrY, ulX:lrX]              
         
         # Create a new geomatrix for the image
         geoTrans = list(geoTrans)
@@ -143,13 +153,6 @@ class Clip(object):
         
         return '%s%s.tif' % (self.output, province_name)
         
-#     def getResolution(self):
-#         geoMatrix = self.srcImage.GetGeoTransform()
-#         xres = geoMatrix[1]  
-#         yres = geoMatrix[5]
-#         res = pandas.DataFrame([xres,yres], columns=('XRes','YRes'))
-#         res.to_csv('%s\%sResolution.csv' % (geodatafilepath, ),columns=('XRes','YRes'),index=False)
-#         return [xres,yres]
         
     def clipToMask(self):
         '''
@@ -176,6 +179,16 @@ class Clip(object):
 
             ulX, ulY = self.world2Pixel(geoTrans, minX, maxY)
             lrX, lrY = self.world2Pixel(geoTrans, maxX, minY)
+            
+            # Include offset to position correctly within overall image
+            xoffset =  ulX
+            yoffset =  ulY
+            
+            # Correction for countries that exceed satellite dataset boundaries
+            if(ulY < 0):
+                ulY = 0
+                yoffset = 0
+                maxY = 75.
         
             # Calculate the pixel size of the new image
             pxWidth = int(lrX - ulX)
@@ -183,10 +196,6 @@ class Clip(object):
             
             clip = self.srcArray[ulY:lrY, ulX:lrX]
                     
-            # Include offset to position correctly within overall image
-            xoffset =  ulX
-            yoffset =  ulY
-            
             # Create a new geomatrix for the image
             geoTrans = list(geoTrans)
             geoTrans[0] = minX
@@ -217,7 +226,6 @@ class Clip(object):
                 rasterize.polygon(pixels, 0)
                 
                 mask = self.imageToArray(rasterPoly) 
-                
                 
             # Clip the image using the mask
             try:
@@ -427,6 +435,9 @@ class Portfolio(object):
             except: # Check for province name not matching shapefile data
                 print("Invalid province name: ",province)
                 continue
+            
+            if maxY > 75:
+                maxY = 75
             
             # Load clipped light image file
             try:
