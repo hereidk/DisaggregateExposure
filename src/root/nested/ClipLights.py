@@ -352,9 +352,14 @@ class Portfolio(object):
         QC_province = [i for i in file_province_names if i in shp_province_names]
         mismatch_file = [i for i in file_province_names if not i in shp_province_names] 
         mismatch_shp = [i for i in shp_province_names if not i in file_province_names] 
+        name_pairs = {}
         for i in mismatch_file:
-            QC_province.append(self.scrollMenu(i,mismatch_shp))
-        return QC_province
+            user_input = self.scrollMenu(i,mismatch_shp)
+            name_pairs[i] = user_input
+            if user_input == 'None':
+                continue
+            QC_province.append(user_input)            
+        return QC_province, name_pairs
     
     def distribute_locs(self): 
         
@@ -373,30 +378,51 @@ class Portfolio(object):
             province_feature = lyr.GetFeature(i)
             shp_province_names.append(province_feature.GetField(province_feature.GetFieldIndex('name')))
         
-        # Correct any mismatches between province lists
-        province_names = self.provinceQC(province_names, shp_province_names)
+        # Pair province names with portfolio data
+        cnt = dict(zip(self.portfile[:,0],self.portfile[:,1]))
+        tiv = dict(zip(self.portfile[:,0],self.portfile[:,2]))
         
-        cnt = self.portfile[:,1]
-        tiv = self.portfile[:,2]  
+        # Correct any mismatches between province lists
+        province_names, corrected_pairs = self.provinceQC(province_names, shp_province_names)
+        
+        # Replace any mismatched provinces with correct province names
+        for i in corrected_pairs:
+            if corrected_pairs[i] == 'None': # Remove any data that does not match known provinces
+                cnt.pop(i)
+                tiv.pop(i)
+                continue
+            cnt[corrected_pairs[i]] = cnt.pop(i)
+            tiv[corrected_pairs[i]] = tiv.pop(i)
+        
         if self.resolution == 'Country':
-            cnt = cnt.astype(int)
-            tiv = tiv.astype(float)      
-        for i in range(np.size(cnt,0)): # Clean number strings, remove commas, set dtype
-            if self.isNumber(cnt[i]):
-                cnt[i] = int(cnt[i])
+            cnt[self.country] = int(cnt[self.country])
+            tiv[self.country] = float(tiv[self.country])     
+        for key in cnt: # Clean number strings, remove commas, set dtype
+            if self.isNumber(cnt[key]):
+                cnt[key] = int(cnt[key])
             else:
-                cnt[i] = int(cnt[i].replace(',',''))
-            if self.isNumber(tiv[i]):
-                tiv[i] = float(tiv[i])
+                cnt[key] = int(cnt[key].replace(',',''))
+            if self.isNumber(tiv[key]):
+                tiv[key] = float(tiv[key])
             else:
-                tiv[i] = float(tiv[i].replace(',',''))
+                tiv[key] = float(tiv[key].replace(',',''))
                 
-        try:
-            loc_count = dict(zip(province_names,cnt))
-            loc_TIV = dict(zip(province_names,tiv))
-        except ValueError:
-            print (province_names, cnt)
+#         try:
+#             loc_count = dict(zip(province_names,cnt))
+#             loc_TIV = dict(zip(province_names,tiv))
+#         except ValueError:
+#             print (province_names, cnt)
             
+        # Check to see if output directory exists - clear if any old data is present
+        output = r'%s\%s\Provinces\Points' % (geodatafilepath, self.country)
+        if not os.path.exists(output):
+            os.makedirs(output)
+        else:
+            filelist = [f for f in os.listdir(output) if f.endswith('.csv')]
+            os.chdir(output)
+            for f in filelist:
+                os.remove(f)
+        
         for province in province_names:
             lyr.SetAttributeFilter("name = '%s'" % province)
             poly = lyr.GetNextFeature()
@@ -421,7 +447,7 @@ class Portfolio(object):
             # Calculate average value per location
             if self.resolution == 'State/Province':
                 try:
-                    avg_TIV = np.float(loc_TIV[province])/loc_count[province]
+                    avg_TIV = np.float(tiv[province])/cnt[province]
                 except ZeroDivisionError:
                     avg_TIV = 0
             elif self.resolution == 'Country':
@@ -437,9 +463,9 @@ class Portfolio(object):
             
             # Weighted distribution of lat/lon, randomly distributed within ~1km grid resolution
             # Add some variability to average TIV - need to refine with better data.
-            loc = np.zeros((loc_count[province],2))
-            locdist = np.zeros((loc_count[province],3))
-            for i in range(loc_count[province]):
+            loc = np.zeros((cnt[province],2))
+            locdist = np.zeros((cnt[province],3))
+            for i in range(cnt[province]):
                 loc[i,:] = self.setpt(provArray,cumdist,minX, minY, maxX, maxY)
                 locdist[i,1] = loc[i,1] - random.random() * self.xres
                 locdist[i,0] = loc[i,0] + random.random() * self.yres
@@ -447,13 +473,10 @@ class Portfolio(object):
     
             # Scale randomly-produced insured values to match known total for region    
             sum_TIV = np.sum(locdist[:,2])
-            scale_TIV = np.float(loc_TIV[province])/sum_TIV
+            scale_TIV = np.float(tiv[province])/sum_TIV
             locdist[:,2] = locdist[:,2] * scale_TIV
                            
-            # Output latitude, longitude, total insured value to .csv file
-            output = r'%s\%s\Provinces\Points' % (geodatafilepath, self.country)
-            if not os.path.exists(output):
-                os.makedirs(output)
+            
             locdist_pandas = pandas.DataFrame(locdist, columns = ['Lat','Lon','TIV'])
             locdist_pandas['State/Province'] = province
             locdist_pandas['Country'] = self.country

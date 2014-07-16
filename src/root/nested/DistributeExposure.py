@@ -25,33 +25,43 @@ def countryList():
     choices = np.loadtxt('CountryListVShort.csv',dtype=str,delimiter=',')
     for i in range(np.size(choices)):
         choices[i] = choices[i][2:-1]
-    return choices
+    label = 'Select country'
+    return choices, label
 
 def resolutionList():
     # Choose level to distribute exposures
     choices = ['Country', 'State/Province']
-    return choices
+    label = 'Select level to distribute exposures'
+    return choices, label
 
 def LOBList():
     # Choose LOB options
     choices = ['Res', 'Com', 'Ind']
-    return choices
+    label = 'Select line of business'
+    return choices, label
 
 def perilList():
     # Choose peril options
     choices = ['WS', 'EQ', 'FL']
-    return choices
+    label = 'Select peril'
+    return choices, label
+
+def yesNo(label):
+    choices = ['Yes', 'No']
+    return choices, label
 
 def scrollMenu(function):
     # Drop-down menu to select country
     root = tkinter.Tk()
-    root.geometry("%dx%d+%d+%d" % (330, 80, 200, 150))
+    root.geometry("%dx%d+%d+%d" % (330, 100, 200, 150))
     root.title('Exposure disaggregation settings')
     
-    choices = function
+    choices, label = function
         
     var = tkinter.StringVar(root)
     var.set(choices[0]) # Initial value
+    w = tkinter.Label(root, text=label, wraplength=330, font=('Arial', 10))
+    w.pack(side='top')
     option = tkinter.OptionMenu(root, var, *choices)
     option.pack(side='left', padx=10, pady=10)
     scrollbar = tkinter.Scrollbar(root)
@@ -186,9 +196,9 @@ def generateEDM(country, province, LOB, peril):
     edm.genLocFile()
     edm.outputFiles()
     
-def EDMOn(resolution, country, LOB, peril, run=True):
+def EDMOn(resolution, country, LOB, peril, runEDM=True):
     #     Generate EDM file
-    if run:
+    if runEDM:
         if resolution == 'Country':
             generateEDM(country, country, LOB, peril)
         if resolution == 'State/Province':
@@ -199,20 +209,26 @@ def EDMOn(resolution, country, LOB, peril, run=True):
         
 def runMain():
     # User input
-    resolution = scrollMenu(resolutionList())
     country = scrollMenu(countryList())
+    resolution = scrollMenu(resolutionList())
+    runLights = scrollMenu(yesNo('Update light data? Select yes if country/resolution combination has not been produced previously'))
     LOB = scrollMenu(LOBList())
     peril = scrollMenu(perilList())  
+    
+    if runLights == 'Yes':
+        run=True
+    else:
+        run=False
         
 #     Input filename of nighttime lights dataset. 
     image_file = r'%s\Night Lights\No-Saturation-F16_20100111-20110731_rad_v4.geotiff\No-Saturation-F16_20100111-20110731_rad_v4.geotiff\F16_20100111-20110731_rad_v4.avg_vis.tif' % geodatafilepath
     
-    generateLights(country,image_file,resolution,run=False)
+    generateLights(country,image_file,resolution,run)
     
     generatePoints(country,image_file,resolution,LOB,peril)    
 
     # Turn EDM import generator on or off with run
-    EDMOn(resolution, country, LOB, peril, run=False)
+    EDMOn(resolution, country, LOB, peril, runEDM=False)
 
 
 if __name__ == '__main__':
