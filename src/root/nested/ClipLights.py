@@ -406,12 +406,6 @@ class Portfolio(object):
                 tiv[key] = float(tiv[key])
             else:
                 tiv[key] = float(tiv[key].replace(',',''))
-                
-#         try:
-#             loc_count = dict(zip(province_names,cnt))
-#             loc_TIV = dict(zip(province_names,tiv))
-#         except ValueError:
-#             print (province_names, cnt)
             
         # Check to see if output directory exists - clear if any old data is present
         output = r'%s\%s\Provinces\Points' % (geodatafilepath, self.country)

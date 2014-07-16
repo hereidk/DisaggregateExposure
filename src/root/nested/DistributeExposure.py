@@ -232,6 +232,6 @@ def runMain():
 
 
 if __name__ == '__main__':
-    cProfile.run('runMain()', sort='cumtime')
-#     runMain()
+#     cProfile.run('runMain()', sort='cumtime')
+    runMain()
     
