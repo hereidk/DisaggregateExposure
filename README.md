@@ -13,3 +13,11 @@ http://www.ngdc.noaa.gov/eog/dmsp/download_radcal.html
 
 Country, state/province boundaries derived from Natural Earth:
 http://www.naturalearthdata.com/downloads/
+
+DistributeExposure.py is primary file
+ClipLights.py contains classes
+
+Download light data and point image_file (in DistributeExposure-->RunMain()) to location on disk
+Unzip boundary files and point geodatafilepath (in DistributeExposure) to location on disk
+
+Python 3.4, Anaconda
