@@ -17,7 +17,6 @@ import sys
 import random
 import tkinter
 
-# geodatafilepath = 'C:\PF2\QGIS Valmiera\Datasets'
 
 class Clip(object):
     '''
@@ -70,15 +69,18 @@ class Clip(object):
             os.mkdir('%s\%s' % (geodatafilepath, country))
         res.to_csv('%s\%s\%sResolution.csv' % (geodatafilepath, country, country),columns=('XRes','YRes'),index=False)
         
-    def initialClip(self):
-        # Create an OGR layer from a boundary shapefile
+    def initialClip(self, shapef=None, lyr=None, openfile=True):
         DriverName = "ESRI Shapefile"
         driver = ogr.GetDriverByName(DriverName)
-        shapef = driver.Open('%s.shp' % self.countryshp)
-        lyr = shapef.GetLayer()
         
-        geoTrans = self.srcImage.GetGeoTransform()      
-        poly = lyr.GetNextFeature()
+        if openfile:
+            # Create an OGR layer from a boundary shapefile            
+            shapef = driver.Open('%s.shp' % self.countryshp)
+            lyr = shapef.GetLayer()
+        
+        geoTrans = self.srcImage.GetGeoTransform() 
+        poly = lyr.GetNextFeature()     
+        
             
         minX, maxX, minY, maxY = poly.GetGeometryRef().GetEnvelope()
 
@@ -173,86 +175,13 @@ class Clip(object):
             if lyr.GetFeature(province).GetField('name') == 'NULL':
                 continue
             
-            geoTrans = self.srcImage.GetGeoTransform()      
-            poly = lyr.GetFeature(province)
-                
-            minX, maxX, minY, maxY = poly.GetGeometryRef().GetEnvelope()
-
-            ulX, ulY = self.world2Pixel(geoTrans, minX, maxY)
-            lrX, lrY = self.world2Pixel(geoTrans, maxX, minY)
+            self.initialClip(shapef, lyr, openfile=False)
             
-            # Include offset to position correctly within overall image
-            xoffset =  ulX
-            yoffset =  ulY
-            
-            # Correction for countries that exceed satellite dataset boundaries
-            if(ulY < 0):
-                ulY = 0
-                yoffset = 0
-                maxY = 75.
-        
-            # Calculate the pixel size of the new image
-            pxWidth = int(lrX - ulX)
-            pxHeight = int(lrY - ulY)
-            
-            clip = self.srcArray[ulY:lrY, ulX:lrX]
-                    
-            # Create a new geomatrix for the image
-            geoTrans = list(geoTrans)
-            geoTrans[0] = minX
-            geoTrans[3] = maxY  
-            
-            # Create new mask image for each province
-            rasterPoly = Image.new("L", (pxWidth, pxHeight), 1)  
-            
-            geom = poly.GetGeometryRef()
-            
-            for ring in range(geom.GetGeometryCount()):
-                points = []
-                pixels = []
-                geom_poly = geom.GetGeometryRef(ring)
-                
-                # If picking the feature gets a polygon, there are islands, 
-                # go down another level to get LINEARRING
-                if geom_poly.GetGeometryName() == "POLYGON":
-                    pts = geom_poly.GetGeometryRef(0)
-                else:
-                    pts = geom.GetGeometryRef(0)
-                for p in range(pts.GetPointCount()):
-                    points.append((pts.GetX(p), pts.GetY(p)))
-                for p in points:
-                    pixels.append(self.world2Pixel(geoTrans, p[0], p[1]))
-                
-                rasterize = ImageDraw.Draw(rasterPoly)
-                rasterize.polygon(pixels, 0)
-                
-                mask = self.imageToArray(rasterPoly) 
-                
-            # Clip the image using the mask
-            try:
-                clip = gdalnumeric.choose(mask, \
-                    (clip, 0)).astype(gdalnumeric.uint32)
-            except:
-                print('%s exceeds the boundaries of the satellite dataset' % poly.GetField('name'))
-                continue
-                
-            # Save clipped province image   
-            province_name = poly.GetField('name')           
-            gtiffDriver = gdal.GetDriverByName( 'GTiff' )
-            if gtiffDriver is None:
-                raise ValueError("Can't find GeoTiff Driver")
-            if not os.path.exists(self.output):
-                os.makedirs(self.output)
-            gtiffDriver.CreateCopy( "%s%s.tif" % (self.output, province_name),
-                self.OpenArray( clip, prototype_ds=self.raster, xoff=xoffset, yoff=yoffset )
-            )
-        
-    # This function will convert the rasterized clipper shapefile 
-    # to a mask for use within GDAL.    
+   
     def imageToArray(self,i):
         """
-        Converts a Python Imaging Library array to a 
-        gdalnumeric image.
+        Convert the rasterized clipper shapefile 
+        to a mask for use within GDAL.
         """
         a=gdalnumeric.fromstring(i.tostring(),'b')
         a.shape=i.im.size[1], i.im.size[0]
