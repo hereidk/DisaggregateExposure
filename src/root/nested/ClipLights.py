@@ -294,6 +294,8 @@ class Portfolio(object):
         mismatch_shp = [i for i in shp_province_names if not i in file_province_names] 
         name_pairs = {}
         for i in mismatch_file:
+            if np.isnan(i):
+                continue
             user_input = self.scrollMenu(i,mismatch_shp)
             name_pairs[i] = user_input
             if user_input == 'None':
