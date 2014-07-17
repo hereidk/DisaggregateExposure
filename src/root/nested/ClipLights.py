@@ -17,17 +17,18 @@ import sys
 import random
 import tkinter
 
-geodatafilepath = 'C:\PF2\QGIS Valmiera\Datasets'
+# geodatafilepath = 'C:\PF2\QGIS Valmiera\Datasets'
 
 class Clip(object):
     '''
     Takes input of country, splits nighttime lights dataset by province
     '''
     
-    def __init__(self, country, image_file, resolution):
+    def __init__(self, country, image_file, resolution, geodatafilepath):
         '''
         Constructor
         '''
+#         self.geodatafilepath = geodatafilepath
         
         # Raster image to clip\
         self.raster = image_file
@@ -295,7 +296,9 @@ class Portfolio(object):
     Take aggregate portfolio data, split by province, distribute
     by weighted probability using nighttime lights data
     '''
-    def __init__(self,country,image_file,portfolio_file,resolution,LOB,peril):
+    def __init__(self,country,image_file,portfolio_file,resolution,LOB,peril,geodatafilepath):
+        self.geodatafilepath = geodatafilepath
+        
         if resolution == 'State/Province': # Get data from portfolio file if at state/province level
             portfile = pandas.read_csv(portfolio_file,sep=",",usecols = (0,1,2),encoding='latin-1')
         elif resolution == 'Country': # Format country-level data correctly
@@ -416,7 +419,7 @@ class Portfolio(object):
                 tiv[key] = float(tiv[key].replace(',',''))
             
         # Check to see if output directory exists - clear if any old data is present
-        output = r'%s\%s\Provinces\Points' % (geodatafilepath, self.country)
+        output = r'%s\%s\Provinces\Points' % (self.geodatafilepath, self.country)
         if not os.path.exists(output):
             os.makedirs(output)
         else:
@@ -441,13 +444,13 @@ class Portfolio(object):
             
             # Load clipped light image file
             try:
-                provArray = gdalnumeric.LoadFile(r'%s\%s\Provinces\Clip\%s.tif' % (geodatafilepath, self.country, province))
+                provArray = gdalnumeric.LoadFile(r'%s\%s\Provinces\Clip\%s.tif' % (self.geodatafilepath, self.country, province))
             except: # Check for image file not being produced
                 print("Invalid province name: ",province)
                 province = input("Please input correct province name, or None if not available. ")
                 if province == 'None' or province == 'none':
                     continue
-                provArray = gdalnumeric.LoadFile(r'%s\%s\Provinces\Clip\%s.tif' % (geodatafilepath, self.country, province))
+                provArray = gdalnumeric.LoadFile(r'%s\%s\Provinces\Clip\%s.tif' % (self.geodatafilepath, self.country, province))
             
             # Calculate average value per location
             if self.resolution == 'State/Province':

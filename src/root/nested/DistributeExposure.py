@@ -130,7 +130,7 @@ def equalExposureTestPortfolio(country):
 def generateLights(country,image_file,resolution,run=True):
     if run:
         #     Generate clipped images of satellite data
-        lights = Clip(country,image_file,resolution)      
+        lights = Clip(country,image_file,resolution,geodatafilepath)      
         lights.clipToMask()
     
 def generatePoints(country,image_file,resolution,LOB,peril):
@@ -141,7 +141,7 @@ def generatePoints(country,image_file,resolution,LOB,peril):
         numlocs = inputButton('Enter number of locations to distribute.')
         avg_TIV = inputButton('Enter average TIV.')     
         portfolio_file = [country, numlocs, avg_TIV*numlocs]  
-    portfolio = Portfolio(country,image_file,portfolio_file,resolution,LOB,peril)  
+    portfolio = Portfolio(country,image_file,portfolio_file,resolution,LOB,peril,geodatafilepath)  
     portfolio.distribute_locs()
     
     if resolution == 'State/Province':
