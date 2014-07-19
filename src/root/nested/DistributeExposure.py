@@ -13,7 +13,7 @@ import os
 import sys
 from root.nested.ClipLights import Clip, Portfolio
 import numpy as np
-from root.nested.EDMGenerator import EDM
+# from root.nested.EDMGenerator import EDM
 import ogr
 import pandas
 import cProfile

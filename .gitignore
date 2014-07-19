@@ -216,3 +216,7 @@ pip-log.txt
 src/root/nested/EDMGenerator.py
 src/root/nested/AccExpTemplate.csv
 src/root/nested/LocExpTemplate.csv
+
+#Data files
+src/root/nested/Boundaries/ne_10m_admin_0_countries/
+src/root/nested/Boundaries/ne_10m_admin_1_states_provinces/
