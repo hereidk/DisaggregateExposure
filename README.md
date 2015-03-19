@@ -6,6 +6,8 @@ Distribute points based on nighttime lights, corresponds to ~population density,
 Locations with user-defined average value are placed based on probabilities from satellite nighttime lights data.
 Data resolution is ~0.5-1km, points are randomly distributed within grid cells.
 
+Need to find good mask to remove bodies of water.
+
 Next step: Postal code resolution?
 
 Light data available at:
