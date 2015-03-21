@@ -200,13 +200,19 @@ class Clip(object):
         """
         Uses a gdal geomatrix (gdal.GetGeoTransform()) to calculate
         the pixel location of a geospatial coordinate 
+        [0] = top left x (x Origin)
+        [1] = w-e pixel resolution (pixel Width)
+        [2] = rotation, 0 if image is "north up"
+        [3] = top left y (y Origin)
+        [4] = rotation, 0 if image is "north up"
+        [5] = n-s pixel resolution (pixel Height)
         """
         ulX = geoMatrix[0]
         ulY = geoMatrix[3]
         xDist = geoMatrix[1]
         yDist = geoMatrix[5]
-        pixel = int((x - ulX) / xDist)
-        line = int((y - ulY) / yDist)
+        pixel = np.round((x - ulX) / xDist).astype(np.int)
+        line = np.round((y - ulY) / yDist).astype(np.int)
         return (pixel, line) 
     
     def OpenArray(self, array, prototype_ds = None, xoff=0, yoff=0 ):
